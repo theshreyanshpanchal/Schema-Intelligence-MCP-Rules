@@ -1,0 +1,298 @@
+# Laravel → Database Schema Sync Rule
+
+## Purpose
+
+This project uses Laravel as the source of truth for database structure.
+
+The objective is to keep `docs/database-schema.dbml` synchronized with the Laravel database architecture while minimizing token usage, code analysis, and unnecessary schema regeneration.
+
+---
+
+# Operating Mode
+
+Mode: Incremental Synchronization
+
+Default Behavior:
+
+* Analyze only affected database entities.
+* Update only affected DBML definitions.
+* Reuse existing schema definitions.
+* Preserve existing relationships.
+* Minimize file modifications.
+* Minimize token usage.
+
+Full DBML regeneration should occur only when explicitly requested.
+
+---
+
+# Source of Truth
+
+Priority Order:
+
+1. Current migration changes
+2. Existing database schema
+3. Existing DBML
+4. Eloquent relationships
+
+Never infer schema definitions without evidence from the sources above.
+
+---
+
+# Scope
+
+This rule applies ONLY to:
+
+* Migrations
+* Models
+* Foreign keys
+* Pivot tables
+* Polymorphic relations
+* Indexes
+* Constraints
+
+Do not analyze unrelated application code.
+
+---
+
+# Synchronization Trigger Conditions
+
+Synchronization is required when:
+
+* A migration is created
+* A migration is modified
+* A table is created
+* A table is renamed
+* A table is deleted
+* A column is created
+* A column is modified
+* A column is renamed
+* A column is deleted
+* A foreign key changes
+* An index changes
+* A pivot table changes
+* A polymorphic relation changes
+
+---
+
+# Incremental Synchronization
+
+Never regenerate the entire DBML file.
+
+Only update:
+
+* Affected tables
+* Affected columns
+* Affected indexes
+* Affected relationships
+
+Preserve all unrelated definitions.
+
+---
+
+# Analysis Priority
+
+Analyze only the minimum amount of code required.
+
+Priority:
+
+1. Current migration
+2. Related migration history
+3. Existing DBML
+4. Related Eloquent model
+
+Avoid unnecessary project-wide scans.
+
+---
+
+# Relationship Detection
+
+Detect relationships from:
+
+* foreignId()
+* constrained()
+* foreign()
+* belongsTo()
+* hasOne()
+* hasMany()
+* belongsToMany()
+* morphTo()
+* morphOne()
+* morphMany()
+
+Never invent relationships.
+
+Only document relationships that can be verified.
+
+---
+
+# Validation Requirements
+
+Before completing synchronization:
+
+Verify:
+
+* All modified tables exist in DBML.
+* All modified columns exist in DBML.
+* All modified foreign keys exist in DBML.
+* All modified indexes exist in DBML.
+* All modified relationships exist in DBML.
+* No orphan references exist.
+* No duplicate table definitions exist.
+* No stale relationships remain.
+
+---
+
+# Rename Handling
+
+When a table or column is renamed:
+
+* Update existing DBML definitions.
+* Preserve relationships.
+* Do not create duplicate definitions.
+* Remove obsolete references.
+
+Treat renames as updates, not new entities.
+
+---
+
+# Deletion Handling
+
+When a database entity is removed:
+
+* Mark as candidate for removal.
+* Generate summary.
+* Request approval.
+
+Never automatically remove:
+
+* Tables
+* Columns
+* Relationships
+
+without approval.
+
+---
+
+# Approval First Policy
+
+Before modifying DBML:
+
+Generate a change summary.
+
+Example:
+
+Proposed Schema Changes:
+
+1. Add table: likes
+2. Add relationship: likes.user_id → users.id
+3. Add relationship: likes.post_id → posts.id
+
+Proceed?
+
+Do not modify DBML until approval is received.
+
+---
+
+# Large Change Protection
+
+If more than 10 tables are affected:
+
+Stop.
+
+Generate summary.
+
+Request approval.
+
+Example:
+
+Large Schema Update Detected
+
+Affected Tables: 14
+
+Affected Relationships: 23
+
+Proceed?
+
+---
+
+# Documentation Reuse
+
+When schema definitions already exist:
+
+* Reuse existing definitions.
+* Update only changed sections.
+* Preserve notes.
+* Preserve grouping.
+* Preserve formatting.
+
+Do not rebuild unaffected sections.
+
+---
+
+# Performance Rules
+
+Minimize:
+
+* File modifications
+* Project scanning
+* Relationship analysis
+* Token usage
+
+Always choose:
+
+Migration Analysis
+→ DBML Update
+
+Avoid:
+
+Migration Analysis
+→ Full Schema Scan
+→ Full DBML Regeneration
+
+---
+
+# Stop Conditions
+
+Immediately stop and report when:
+
+* Migration intent is unclear
+* Relationship cannot be verified
+* Existing DBML is inconsistent
+* Multiple conflicting schema sources exist
+
+Report:
+
+* Issue
+* Location
+* Likely cause
+
+Wait for user instructions.
+
+Do not guess.
+
+---
+
+# Completion Criteria
+
+A schema task is complete only when:
+
+* DBML reflects approved changes.
+* Relationships are synchronized.
+* Validation passes.
+* No stale definitions remain.
+* No duplicate definitions remain.
+
+---
+
+# Predictable Execution Principle
+
+Use a single deterministic workflow:
+
+Migration Analysis
+→ Proposed Changes
+→ Approval
+→ DBML Update
+→ Validation
+→ Summary
+
+Only.

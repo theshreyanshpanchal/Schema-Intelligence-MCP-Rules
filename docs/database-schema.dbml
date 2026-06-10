@@ -1,0 +1,327 @@
+// Schema Intelligence MCP — database schema
+// Source of truth: Laravel migrations
+
+TableGroup auth {
+  users
+  password_reset_tokens
+  sessions
+}
+
+TableGroup framework {
+  cache
+  cache_locks
+  jobs
+  job_batches
+  failed_jobs
+}
+
+TableGroup employee_management {
+  employment_types
+  departments
+  job_titles
+  employees
+  employee_emergency_contacts
+  leave_types
+  leave_balances
+  leave_requests
+  attendances
+  salaries
+  employee_documents
+}
+
+// --- Auth ---
+
+Table users {
+  id bigint [pk, increment]
+  name varchar
+  email varchar [unique]
+  email_verified_at timestamp [null]
+  password varchar
+  remember_token varchar [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table password_reset_tokens {
+  email varchar [pk]
+  token varchar
+  created_at timestamp [null]
+}
+
+Table sessions {
+  id varchar [pk]
+  user_id bigint [null]
+  ip_address varchar(45) [null]
+  user_agent text [null]
+  payload longtext
+  last_activity int
+}
+
+// --- Framework ---
+
+Table cache {
+  key varchar [pk]
+  value mediumtext
+  expiration bigint
+}
+
+Table cache_locks {
+  key varchar [pk]
+  owner varchar
+  expiration bigint
+}
+
+Table jobs {
+  id bigint [pk, increment]
+  queue varchar
+  payload longtext
+  attempts smallint
+  reserved_at int [null]
+  available_at int
+  created_at int
+}
+
+Table job_batches {
+  id varchar [pk]
+  name varchar
+  total_jobs int
+  pending_jobs int
+  failed_jobs int
+  failed_job_ids longtext
+  options mediumtext [null]
+  cancelled_at int [null]
+  created_at int
+  finished_at int [null]
+}
+
+Table failed_jobs {
+  id bigint [pk, increment]
+  uuid varchar [unique]
+  connection varchar
+  queue varchar
+  payload longtext
+  exception longtext
+  failed_at timestamp
+}
+
+// --- Employee Management ---
+
+Table employment_types {
+  id bigint [pk, increment]
+  name varchar [unique]
+  description text [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table departments {
+  id bigint [pk, increment]
+  name varchar
+  code varchar [unique]
+  description text [null]
+  parent_id bigint [null]
+  head_employee_id bigint [null]
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  deleted_at timestamp [null]
+
+  indexes {
+    parent_id
+  }
+}
+
+Table job_titles {
+  id bigint [pk, increment]
+  title varchar
+  code varchar [unique, null]
+  description text [null]
+  department_id bigint [null]
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    department_id
+  }
+}
+
+Table employees {
+  id bigint [pk, increment]
+  user_id bigint [null]
+  employee_code varchar [unique]
+  first_name varchar
+  last_name varchar
+  middle_name varchar [null]
+  email varchar [unique]
+  phone varchar [null]
+  date_of_birth date [null]
+  gender varchar [null, note: 'male | female | other | prefer_not_to_say']
+  hire_date date
+  termination_date date [null]
+  employment_type_id bigint
+  department_id bigint
+  job_title_id bigint
+  manager_id bigint [null]
+  status varchar [default: 'active', note: 'active | inactive | on_leave | terminated']
+  address_line_1 varchar [null]
+  address_line_2 varchar [null]
+  city varchar [null]
+  state varchar [null]
+  postal_code varchar [null]
+  country varchar [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  deleted_at timestamp [null]
+
+  indexes {
+    department_id
+    job_title_id
+    manager_id
+    status
+  }
+}
+
+Table employee_emergency_contacts {
+  id bigint [pk, increment]
+  employee_id bigint
+  name varchar
+  relationship varchar
+  phone varchar
+  email varchar [null]
+  is_primary boolean [default: false]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    employee_id
+  }
+}
+
+Table leave_types {
+  id bigint [pk, increment]
+  name varchar
+  code varchar [unique]
+  description text [null]
+  default_days_per_year smallint [default: 0]
+  is_paid boolean [default: true]
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table leave_balances {
+  id bigint [pk, increment]
+  employee_id bigint
+  leave_type_id bigint
+  year smallint
+  allocated_days decimal(5,2) [default: 0]
+  used_days decimal(5,2) [default: 0]
+  carried_forward_days decimal(5,2) [default: 0]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (employee_id, leave_type_id, year) [unique]
+  }
+}
+
+Table leave_requests {
+  id bigint [pk, increment]
+  employee_id bigint
+  leave_type_id bigint
+  start_date date
+  end_date date
+  total_days decimal(5,2)
+  reason text [null]
+  status varchar [default: 'pending', note: 'pending | approved | rejected | cancelled']
+  reviewed_by bigint [null]
+  reviewed_at timestamp [null]
+  review_notes text [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (employee_id, status)
+    (start_date, end_date)
+  }
+}
+
+Table attendances {
+  id bigint [pk, increment]
+  employee_id bigint
+  date date
+  check_in time [null]
+  check_out time [null]
+  status varchar [default: 'present', note: 'present | absent | late | half_day | on_leave | remote']
+  notes text [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (employee_id, date) [unique]
+  }
+}
+
+Table salaries {
+  id bigint [pk, increment]
+  employee_id bigint
+  basic_salary decimal(12,2)
+  currency varchar(3) [default: 'USD']
+  pay_frequency varchar [default: 'monthly', note: 'monthly | biweekly | weekly | hourly']
+  effective_from date
+  effective_to date [null]
+  is_current boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (employee_id, is_current)
+  }
+}
+
+Table employee_documents {
+  id bigint [pk, increment]
+  employee_id bigint
+  document_type varchar
+  title varchar
+  file_path varchar
+  issued_at date [null]
+  expires_at date [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    employee_id
+  }
+}
+
+// --- Relationships ---
+
+Ref: sessions.user_id > users.id
+
+Ref: departments.parent_id > departments.id
+Ref: departments.head_employee_id > employees.id
+
+Ref: job_titles.department_id > departments.id
+
+Ref: employees.user_id > users.id
+Ref: employees.employment_type_id > employment_types.id
+Ref: employees.department_id > departments.id
+Ref: employees.job_title_id > job_titles.id
+Ref: employees.manager_id > employees.id
+
+Ref: employee_emergency_contacts.employee_id > employees.id
+
+Ref: leave_balances.employee_id > employees.id
+Ref: leave_balances.leave_type_id > leave_types.id
+
+Ref: leave_requests.employee_id > employees.id
+Ref: leave_requests.leave_type_id > leave_types.id
+Ref: leave_requests.reviewed_by > employees.id
+
+Ref: attendances.employee_id > employees.id
+
+Ref: salaries.employee_id > employees.id
+
+Ref: employee_documents.employee_id > employees.id
